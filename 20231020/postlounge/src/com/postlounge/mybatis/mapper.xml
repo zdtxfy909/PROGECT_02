@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="postlounge">
+	<!-- 동적검색 -->
+	<select id="searchList" parameterType="String" resultType="postVO">
+		SELECT POST_IDX, TITLE, POST_CONTENT
+    			, POST_PHOTO, HIT, POST_DATE
+		FROM POSTS
+		WHERE TITLE LIKE '%' || #{keyword} || '%'
+		OR POST_CONTENT LIKE '%' || #{keyword} || '%'
+		ORDER BY HIT
+	</select>
+	
+	<!-- 전체 게시글 개수 조회 -->
+	<select id="totalCount" resultType="int">
+		SELECT COUNT(*) AS CNT FROM POSTS
+	</select>
+	
+	<!-- 회원가입 -->
+	<insert id="insert" parameterType="memberVO">
+		INSERT INTO MEMBERS (MEMBER_IDX, NAME, ID, PWD
+				, NICKNAME, MEMBER_PHOTO)
+		VALUES (MEMBER_SEQ.NEXTVAL, #{name}, #{id}, #{pwd}
+				, #{nickname}, #{memberPhoto})
+	</insert>
+	
+	<!-- id로 조회 -->
+	<select id="one" parameterType="string" resultType="memberVO">
+		SELECT MEMBER_IDX, NAME, ID, PWD, NICKNAME, MEMBER_PHOTO
+		FROM MEMBERS
+		WHERE ID = #{id}
+	</select>
+  
+  	<!-- 로그인 -->
+	<select id="login" parameterType="memberVO" resultType="memberVO">
+		SELECT MEMBER_IDX, NAME, ID, PWD, NICKNAME, MEMBER_PHOTO
+		FROM MEMBERS
+		WHERE ID = #{id}
+		AND PWD = #{pwd} 
+	</select>  
+	
+
+</mapper>
