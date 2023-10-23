@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="post">
+	
+	<!-- 
+		<insert | delete | update | select 속성="값" 속성="값 ~~>
+			- id 속성 : DAO에서 설정한 값 ▶ session.insert("memberInsert", dto);
+			- parameterType 속성 : 매개 변수 타입(클래스타입, 기본데이터타입) : 생략 가능
+			- 입력 값 표기 : dto.getIrum() → #{dto 內 속성명} ▶ #{irum}
+			- SQL 문장의 마지막에 세미콜론(;)은 입력하지 않는다. 
+			- resultType 속성 : select 쿼리를 수행했을 때 결과 타입
+		</insert | delete | update | select>
+	 -->
+	 
+	<!-- 제목,내용,작성자,댓글로 게시물 검색 -->
+	<select id="search" parameterType="map" resultType="postVO">
+		<choose>
+			<when test="idx == 0">
+				SELECT * 
+				FROM POSTS P
+				INNER JOIN MEMBERS M ON P.MEMBER_IDX = M.MEMBER_IDX
+				WHERE P.TITLE LIKE INITCAP('%'||#{keyword}||'%')
+			</when>
+			<when test="idx == 1">
+				SELECT * 
+				FROM POSTS P
+				INNER JOIN MEMBERS M ON P.MEMBER_IDX = M.MEMBER_IDX
+				WHERE P.POST_CONTENT LIKE INITCAP('%'||#{keyword}||'%')
+			</when>
+			<when test="idx == 2">
+				SELECT * 
+				FROM POSTS P
+				INNER JOIN MEMBERS M ON P.MEMBER_IDX = M.MEMBER_IDX
+				WHERE M.NICKNAME LIKE INITCAP('%'||#{keyword}||'%')
+			</when>
+			<when test="idx == 3">
+				SELECT * 
+				FROM POSTS P
+				INNER JOIN COMMENTS C ON P.POST_IDX = C.POST_IDX
+				WHERE C.COMM_CONTENT LIKE INITCAP('%'||#{keyword}||'%')
+			</when>
+		</choose>
+		ORDER BY P.POST_DATE DESC
+	</select>
+
+	<!-- 조회 높은 순으로 10개 가져오기 -->
+	<select id="getTopList" resultType="postVO">
+		SELECT * 
+		FROM (
+		SELECT * FROM POSTS P
+		ORDER BY P.HIT DESC, P.POST_DATE DESC
+		) WHERE ROWNUM &lt;= 10
+	</select>
+	
+	<!-- 게시물 작성 -->
+	<insert id="insertPost" parameterType="PostVO">
+		INSERT INTO POSTS 
+		VALUES (POST_SEQ.NEXTVAL, #{title}, #{postContent}, 0, SYSDATE, #{postType}, #{memberIdx}, null, #{postFileName}, #{postOriName})
+	</insert>
+	<!-- INSERT INTO POSTS 
+		VALUES (POST_SEQ.NEXTVAL, #{title}, #{postContent}, 0, SYSDATE, #{postType}, #{memberIdx}, null) -->
+
+	<!--==================================-->
+	<!-- [Lee]글 상세보기(세부내용 가져오기) -->
+	<select id="selectOne" parameterType="int" resultType="postListVO">
+		SELECT P.POST_IDX, P.POST_TYPE, P.TITLE, P.POST_CONTENT
+		    , P.POST_PHOTO, M.NAME, P.HIT, L.LIKE_NUM
+		    , P.POST_DATE
+		FROM POSTS P, LIKES L, MEMBERS M
+		WHERE P.POST_IDX = L.POST_IDX
+		AND P.MEMBER_IDX = M.MEMBER_IDX
+		AND P.POST_IDX = #{postIdx}
+	</select>
+	
+	<!-- 게시물 불러오기 -->
+	<select id="getPostList" resultType="postListVO">
+		SELECT P.POST_IDX, P.POST_TYPE, P.TITLE, P.POST_CONTENT
+		    , P.POST_PHOTO, M.NAME, P.HIT, L.LIKE_NUM
+		    , P.POST_DATE
+		FROM POSTS P, LIKES L, MEMBERS M
+		WHERE P.POST_IDX = L.POST_IDX
+		AND P.MEMBER_IDX = M.MEMBER_IDX
+	</select>
+	
+	<!-- 내가 팔로우하는 사람의 게시글 목록 가져오기 -->
+	<select id="getFriendsPost" parameterType="int" resultType="postListVO">
+		SELECT P.POST_IDX, P.POST_TYPE, P.TITLE, P.POST_CONTENT
+		    , P.POST_PHOTO, M.NAME, P.HIT, L.LIKE_NUM
+		    , P.POST_DATE, F.MEMBER_IDX AS MEMBER, F.FRIEND_IDX AS FREIND
+		FROM POSTS P, LIKES L, MEMBERS M, FRIENDS F
+		WHERE P.POST_IDX = L.POST_IDX
+		AND P.MEMBER_IDX = M.MEMBER_IDX
+        AND P.MEMBER_IDX = F.MEMBER_IDX
+	</select>
+	
+</mapper>
